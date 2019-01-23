@@ -14,4 +14,6 @@ class UserService[F[_]](repo: UserRepository[F], logger: Logger[F]) {
   def update(user: User): F[User] = repo.update(user)
 
   def save(user: User): F[User] = repo.save(user)
+
+  def delete(name: String): F[Boolean] = repo.delete(User(name, -1))
 }

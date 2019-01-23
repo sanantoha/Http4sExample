@@ -30,5 +30,11 @@ class UserHttpEndpoint[F[_]: Sync](userService: UserService[F], logger: Logger[F
       req.decode[User]{ user =>
         userService.update(user).flatMap(user => Ok(s"User ${user.name} was updated"))
       }.handleErrorWith(_ => NoContent())
+
+    case DELETE -> Root / name =>
+      userService.delete(name).flatMap(b =>
+        if (b) Ok(s"User with name $name was deleted")
+        else NotFound(s"User with name $name not found")
+      )
   }
 }
