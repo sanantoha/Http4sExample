@@ -7,17 +7,24 @@ import doobie.util.transactor.Transactor
 import io.chrisdavenport.log4cats.Logger
 import doobie.implicits._
 import fs2.Stream
+import cats.syntax.flatMap._
 import cats.syntax.functor._
+import doobie.util.log.LogHandler
 
 class UserRepositoryImpl[F[_]: Monad](xa: Transactor[F], logger: Logger[F]) extends UserRepository[F] {
 
   import User._
 
-  override def save(user: User): F[User] =
-    sql"insert into users (name, age, last_updatetime) values (${user.name}, ${user.age}, ${user.lastUpdatetime})"
-      .update
-      .withUniqueGeneratedKeys[User]("name", "age", "last_updatetime")
-      .transact(xa)
+  implicit val dbLoggerHandler = LogHandler.jdkLogHandler
+
+  override def save(user: User): F[User] = for {
+    _ <- logger.info(s"invoke UserRepository.save method with param: $user")
+    res <- sql"insert into users (name, age, last_updatetime) values (${user.name}, ${user.age}, ${user.lastUpdatetime})"
+          .update
+          .withUniqueGeneratedKeys[User]("name", "age", "last_updatetime")
+          .transact(xa)
+  } yield res
+
 
   override def update(user: User): F[User] =
     sql"update users set age = ${user.age}, last_updatetime = ${user.lastUpdatetime} where name = ${user.name}"

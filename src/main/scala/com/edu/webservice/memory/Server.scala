@@ -10,14 +10,14 @@ import fs2.Stream
 import io.circe.generic.auto._
 import org.http4s._
 import org.http4s.dsl.Http4sDsl
-import org.http4s.dsl.io._
+import org.http4s.implicits._
 import org.http4s.server.Router
 import org.http4s.server.blaze.BlazeServerBuilder
 
 
 object Server extends IOApp {
 
-  def runServer[F[_]: ConcurrentEffect](): Stream[F, ExitCode] =
+  def runServer[F[_]: Timer: ConcurrentEffect](): Stream[F, ExitCode] =
     for {
       userRepository <- Stream(new InMemoryUserRepository[F])
       userService    <- Stream(new UserService[F](userRepository))

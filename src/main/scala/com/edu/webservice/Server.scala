@@ -6,10 +6,10 @@ import doobie.hikari.HikariTransactor
 import doobie.util.ExecutionContexts
 import doobie.util.transactor.Transactor
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
-import org.http4s.server.blaze.{BlazeBuilder, BlazeServerBuilder}
+import org.http4s.server.blaze.BlazeServerBuilder
 import cats.syntax.functor._
 import cats.syntax.flatMap._
-import org.http4s.dsl.io._
+import org.http4s.implicits._
 import org.http4s.server.Router
 
 object Server extends IOApp {
@@ -26,7 +26,7 @@ object Server extends IOApp {
       te)
   } yield xa
 
-  def runServer[F[_]: ConcurrentEffect](xa: Transactor[F]): F[ExitCode] = {
+  def runServer[F[_]: Timer: ConcurrentEffect](xa: Transactor[F]): F[ExitCode] = {
     for {
       logger <- Slf4jLogger.create[F]
       repo = new UserRepositoryImpl[F](xa, logger)

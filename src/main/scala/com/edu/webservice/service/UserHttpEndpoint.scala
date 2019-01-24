@@ -4,6 +4,7 @@ import cats.effect.Sync
 import io.chrisdavenport.log4cats.Logger
 import org.http4s.HttpRoutes
 import org.http4s.dsl.Http4sDsl
+import cats.syntax.functor._
 import cats.syntax.flatMap._
 import com.edu.webservice.domain.User
 import io.circe.generic.auto._
@@ -13,8 +14,12 @@ import com.edu.webservice.codec.JsonCodecs
 class UserHttpEndpoint[F[_]: Sync](userService: UserService[F], logger: Logger[F]) extends Http4sDsl[F] with JsonCodecs[F] {
 
   val service: HttpRoutes[F] = HttpRoutes.of {
-    case GET -> Root / name =>
-      userService.find(name).flatMap(_.fold(NotFound(s"User with name $name"))(Ok(_)))
+    case GET -> Root / name => for {
+      _ <- logger.info(s"invoke GET method with parameter: $name")
+      res <- if (name == "ping") Ok("pong")
+             else userService.find(name).flatMap(_.fold(NotFound(s"User with name $name"))(Ok(_)))
+    } yield res
+
 
     case GET -> Root =>
       Ok(userService.findAll())
