@@ -1,5 +1,7 @@
 package com.edu.webservice.service
 
+import java.time.LocalDateTime
+
 import com.edu.webservice.algebra.UserRepository
 import com.edu.webservice.domain.User
 import io.chrisdavenport.log4cats.Logger
@@ -15,5 +17,5 @@ class UserService[F[_]](repo: UserRepository[F], logger: Logger[F]) {
 
   def save(user: User): F[User] = repo.save(user)
 
-  def delete(name: String): F[Boolean] = repo.delete(User(name, -1))
+  def delete(name: String): F[Boolean] = repo.delete(User(name))
 }
