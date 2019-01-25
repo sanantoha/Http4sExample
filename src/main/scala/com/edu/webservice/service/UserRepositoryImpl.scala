@@ -26,26 +26,35 @@ class UserRepositoryImpl[F[_]: Monad](xa: Transactor[F], logger: Logger[F]) exte
   } yield res
 
 
-  override def update(user: User): F[User] =
-    sql"update users set age = ${user.age}, last_updatetime = ${user.lastUpdatetime} where name = ${user.name}"
-      .update
-      .withUniqueGeneratedKeys[User]("name", "age", "last_updatetime")
-      .transact(xa)
+  override def update(user: User): F[User] = for {
+    _ <- logger.info(s"invoke UserRepository.save method with param: $user")
+    res <- sql"update users set age = ${user.age}, last_updatetime = ${user.lastUpdatetime} where name = ${user.name}"
+            .update
+            .withUniqueGeneratedKeys[User]("name", "age", "last_updatetime")
+            .transact(xa)
+  } yield res
+
+  override def delete(user: User): F[Boolean] = for {
+    _ <- logger.info(s"invoke UserRepository.delete method with param: $user")
+    res <- sql"delete from users where name = ${user.name}"
+            .update
+            .run
+            .transact(xa).map(x => if (x > 0) true else false)
+  } yield res
 
 
-  override def delete(user: User): F[Boolean] =
-    sql"delete from users where name = ${user.name}"
-      .update
-      .run
-      .transact(xa).map(x => if (x > 0) true else false)
+  override def find(name: String): F[Option[User]] = for {
+    _ <- logger.info(s"invoke UserRepository.find method with param: $name")
+    res <- sql"select * from users where name = $name"
+            .query[User]
+            .to[List]
+            .map(_.headOption)
+            .transact(xa)
+  } yield res
 
-  override def find(name: String): F[Option[User]] =
-    sql"select * from users where name = $name"
-      .query[User]
-      .to[List]
-      .map(_.headOption)
-      .transact(xa)
+  override def findAll(): Stream[F, User] = for {
+    _ <- Stream.eval(logger.info("invoke UserRepository.findAll method without params"))
+    res <- sql"select * from users".query[User].stream.transact(xa)
+  } yield res
 
-  override def findAll(): Stream[F, User] =
-    sql"select * from users".query[User].stream.transact(xa)
 }
